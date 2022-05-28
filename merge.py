@@ -1,4 +1,5 @@
 import os
+import random
 import argparse
 from typing import Dict, List
 
@@ -14,7 +15,10 @@ def load_results(path: str) -> Dict[str, List[str]]:
     results: Dict[str, List[str]] = {}
     with open(path, 'r') as f:
         for line in f:
-            qid, docids = line.strip().split('\t')
+            data = line.strip().split('\t')
+            if len(data) != 2:
+                continue
+            qid, docids = data
             docids = docids.split(',')
             results[qid] = docids
     return results
