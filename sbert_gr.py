@@ -61,13 +61,13 @@ new_test_set = [(entry['id'], refs) for entry, refs in zip(test_set, refs_test)]
 # save the retrieval augmented dataset to disk
 with open(os.path.join(args.data_path, 'sbert_train_gr.tsv'), 'w') as fpw:
     for qid, pos_ids in new_train_set:
-        fpw.write(f"{qid}\t{",".join(map(str, pos_ids))}\n")
+        fpw.write(f"{qid}\t{','.join(map(str, pos_ids))}\n")
 
 with open(os.path.join(args.data_path, 'sbert_dev_gr.tsv'), 'w') as fpw:
     for qid, pos_ids in new_dev_set:
-        fpw.write(f"{qid}\t{",".join(map(str, pos_ids))}\n")
+        fpw.write(f"{qid}\t{','.join(map(str, pos_ids))}\n")
 
 with open(os.path.join(args.data_path, 'sbert_test_gr.tsv'), 'w') as fpw:
     for qid, pos_ids in new_test_set:
-        fpw.write(f"{qid}\t{",".join(map(str, pos_ids))}\n")
+        fpw.write(f"{qid}\t{','.join(map(str, pos_ids))}\n")
 
