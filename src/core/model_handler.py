@@ -85,7 +85,7 @@ class ModelHandler(object):
         dev_set = datasets['dev']
         test_set = datasets['test']
 
-        train_graphs = datasets['train_graphs']
+        train_graphs = datasets['train_graphs'] # Dict[int, Sequence]
         dev_graphs = datasets['dev_graphs']
         test_graphs = datasets['test_graphs']
 
@@ -93,7 +93,7 @@ class ModelHandler(object):
 
         # Initialize the QA model
         self._n_train_examples = 0
-        self.model = Model(config, train_set)
+        self.model = Model(config, train_graphs)
         self.model.network = self.model.network.to(self.device)
 
         if train_set:

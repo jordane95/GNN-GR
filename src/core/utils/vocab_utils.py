@@ -14,6 +14,11 @@ word_detector = re.compile('\w')
 
 class VocabModel(object):
     def __init__(self, data_set, config):
+        """
+        Args:
+            data_set (Dict[int, Sequence]): graphs in training set
+            config (Dict):
+        """
         print('Building vocabs...')
         (all_words, all_node_ids, all_node_types, all_edge_types) = collect_vocabs(data_set)
         print('Number of words: {}'.format(len(all_words)))
@@ -191,11 +196,15 @@ class Vocab(object):
         return seq
 
 def collect_vocabs(all_instances):
+    """
+    Args:
+        all_instances (Dict[int, Sequence]): graphs in train set
+    """
     all_words = Counter()
     all_node_ids = Counter()
     all_node_types = Counter()
     all_edge_types = Counter()
-    for (seq1, seq2, seq3) in all_instances:
+    for (gid, seq1) in all_instances.items():
         for i in range(len(seq1.graph['g_node_name_words'])):
             all_words.update(seq1.graph['g_node_name_words'][i])
             if len(seq1.graph['g_node_type_words']) > 0:
@@ -207,11 +216,5 @@ def collect_vocabs(all_instances):
         all_node_ids.update(list(seq1.graph['g_node_ids']))
         all_node_types.update(seq1.graph['g_node_type_ids'])
         all_edge_types.update(seq1.graph['g_edge_type_ids'])
-
-        all_words.update(seq2.words)
-
-        if seq3 is not None:
-            for each in seq3:
-                all_words.update(each.words)
 
     return (all_words, all_node_ids, all_node_types, all_edge_types)
