@@ -200,11 +200,11 @@ class Model(object):
             print('[ WARN: Saving failed... continuing anyway. ]')
 
     def predict(self, batch, step, forcing_ratio=1, rl_ratio=0, update=True, out_predictions=False, mode='train'):
-      """
-      Args:
-        batch (Dict[str, Dict[str, object]]): vectorized triple dict input
-        ...
-      """
+        """
+        Args:
+          batch (Dict[str, Dict[str, object]]): vectorized triple dict input
+          ...
+        """
         self.network.train(update)
 
         if mode == 'train':
@@ -246,10 +246,10 @@ class Model(object):
 
 # Training phase
 def train_batch(batch, network, vocab, criterion, forcing_ratio, rl_ratio, config, wmd=None):
-  """
-  Args:
-    batch (Dict[str, Dict[str, object]]): triples
-  """
+    """
+    Args:
+      batch (Dict[str, Dict[str, object]]): triples
+    """
     network.train(True)
 
     batch_size = batch['batch_size']
