@@ -54,7 +54,7 @@ def vectorize_input(batch, config, bert_model, training=True, device=None):
         return None
 
     # Relevant parameters:
-    batch_size = len(batch.batch_size)
+    batch_size = batch.batch_size
 
     in_graphs = {}
     for k, v in batch.in_graphs.items():
