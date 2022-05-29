@@ -284,7 +284,7 @@ def train_batch(batch, network, vocab, criterion, forcing_ratio, rl_ratio, confi
 
     loss_value = loss.item()
 
-    metrics = 1.0
+    metrics = {"placeholder": None}
 
     return loss, loss_value, metrics
 
