@@ -30,9 +30,9 @@ tokenize = lambda s: wordpunct_tokenize(s)
 
 def vectorize_triple_input(triple_batch, config, bert_model, training=True, device=None):
     query_batch, pos_batch, neg_batch = triple_batch
-    query_batch_input =  vectorize_input(query_batch, config, bert_model, training, devce),
-    pos_batch_input = vectorize_input(pos_batch, config, bert_model, training, devce),
-    neg_batch_input = vectorize_input(neg_batch, config, bert_model, training, devce),
+    query_batch_input =  vectorize_input(query_batch, config, bert_model, training, device),
+    pos_batch_input = vectorize_input(pos_batch, config, bert_model, training, device),
+    neg_batch_input = vectorize_input(neg_batch, config, bert_model, training, device),
     vectorized_triple = {
         "query": query_batch_input,
         "pos": pos_batch_input,
