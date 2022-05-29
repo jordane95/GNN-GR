@@ -265,13 +265,13 @@ def train_batch(batch, network, vocab, criterion, forcing_ratio, rl_ratio, confi
                   forcing_ratio=forcing_ratio, partial_forcing=config['partial_forcing'], \
                   sample=config['sample'], ext_vocab_size=ext_vocab_size, \
                   include_cover_loss=config['show_cover_loss'])
-          graph_out[key] = network_out
+          graph_output[key] = network_out
     
     pooler = lambda x: x[0] if network.rnn_type == 'lstm' else x
     
-    query_reps = pooler(graph_out['query'].encoder_state) # (batch_size, graph_emb_dim)
-    pos_reps = pooler(graph_out['pos'].encoder_state)
-    neg_reps = pooler(graph_out['neg'].encoder_state)
+    query_reps = pooler(graph_output['query'].encoder_state) # (batch_size, graph_emb_dim)
+    pos_reps = pooler(graph_output['pos'].encoder_state)
+    neg_reps = pooler(graph_output['neg'].encoder_state)
     
     doc_reps = torch.cat((pos_reps, neg_reps)) # (batch_size*2, graph_emb_dim)
 
