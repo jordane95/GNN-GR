@@ -242,7 +242,7 @@ class DataStream(object):
             pos_ids = [instance[1][0] for instance in cur_instances] # always use the first as positive
             neg_ids = [instance[2][0] for instance in cur_instances] # TODO: random sample a negative
 
-            query_graph_batch = [query_graphs[qid] for qid in query_ids]
+            query_graph_batch = [query_graphs[qid] for qid in query_ids] # List[Sequence]
             pos_graph_batch = [graph_corpus[pid] for pid in pos_ids]
             neg_graph_batch = [graph_corpus[nid] for nid in neg_ids]
 
@@ -318,7 +318,7 @@ class InstanceBatch(object):
             self.oov_dict = OOVDict(base_oov_idx)
 
 
-        batch_graph = [each[0].graph for each in instances]
+        batch_graph = [each.graph for each in instances]
         # Build graph
         self.in_graphs = vectorize_batch_graph(batch_graph, word_vocab, node_vocab, node_type_vocab,\
                              edge_type_vocab, self.oov_dict, kg_emb=config['kg_emb'], f_node_type=config.get('f_node_type', False), ext_vocab=ext_vocab)
