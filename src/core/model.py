@@ -256,7 +256,7 @@ def train_batch(batch, network, vocab, criterion, forcing_ratio, rl_ratio, confi
 
     graph_output = {}
 
-    for key in batch:
+    for key in ['query', 'pos', 'neg']:
       graph_batch = batch[key]
       with torch.set_grad_enabled(True):
           ext_vocab_size = graph_batch['oov_dict'].ext_vocab_size if graph_batch['oov_dict'] else None
