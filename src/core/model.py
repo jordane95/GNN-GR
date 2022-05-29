@@ -267,7 +267,7 @@ def train_batch(batch, network, vocab, criterion, forcing_ratio, rl_ratio, confi
                   include_cover_loss=config['show_cover_loss'])
           graph_output[key] = network_out
     
-    pooler = lambda x: x[0] if network.rnn_type == 'lstm' else x
+    pooler = lambda x: (lambda x: x[0] if network.rnn_type == 'lstm' else x)(x).squeeze(0)
     
     query_reps = pooler(graph_output['query'].encoder_state) # (batch_size, graph_emb_dim)
     pos_reps = pooler(graph_output['pos'].encoder_state)
