@@ -87,7 +87,7 @@ class ModelHandler(object):
 
         train_graphs = datasets['train_graphs']
         dev_graphs = datasets['dev_graphs']
-        test_graphs = dataset['test_graphs']
+        test_graphs = datasets['test_graphs']
 
         graph_corpus = train_graphs
 
