@@ -280,7 +280,7 @@ def train_batch(batch, network, vocab, criterion, forcing_ratio, rl_ratio, confi
 
     target = torch.arange(scores.size(0), device=scores.device, dtype=torch.long)
 
-    loss = nn.CrossEntropy(scores, target)
+    loss = nn.CrossEntropyLoss(reduction='mean')(scores, target)
 
     loss_value = loss.item()
 
