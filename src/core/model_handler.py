@@ -13,7 +13,7 @@ from torch.utils.data import DataLoader
 import torch.backends.cudnn as cudnn
 
 from .model import Model, evaluate_predictions
-from .utils.data_utils import prepare_datasets, DataStream, vectorize_input
+from .utils.data_utils import prepare_datasets, DataStream, vectorize_triple_input
 from .utils.seq_data_utils import prepare_datasets as seq_prepare_datasets
 from .utils.seq_data_utils import DataStream as SeqDataStream
 from .utils.seq_data_utils import vectorize_input as seq_vectorize_input
@@ -79,11 +79,17 @@ class ModelHandler(object):
         else:
             datasets = prepare_datasets(config)
             data_stream = DataStream
-            self.vectorize_input = vectorize_input
+            self.vectorize_input = vectorize_triple_input
 
         train_set = datasets['train']
         dev_set = datasets['dev']
         test_set = datasets['test']
+
+        train_graphs = datasets['train_graphs']
+        dev_graphs = datasets['dev_graphs']
+        test_graphs = dataset['test_graphs']
+
+        graph_corpus = train_graphs
 
         # Initialize the QA model
         self._n_train_examples = 0
@@ -91,21 +97,21 @@ class ModelHandler(object):
         self.model.network = self.model.network.to(self.device)
 
         if train_set:
-            self.train_loader = data_stream(train_set, self.model.vocab_model.word_vocab, self.model.vocab_model.node_vocab, self.model.vocab_model.node_type_vocab, self.model.vocab_model.edge_type_vocab, config=config,
+            self.train_loader = data_stream(train_set, train_graphs, graph_corpus, self.model.vocab_model.word_vocab, self.model.vocab_model.node_vocab, self.model.vocab_model.node_type_vocab, self.model.vocab_model.edge_type_vocab, config=config,
                  isShuffle=True, isLoop=True, isSort=True, ext_vocab=config['pointer'], bert_tokenizer=bert_tokenizer)
             self._n_train_batches = self.train_loader.get_num_batch()
         else:
             self.train_loader = None
 
         if dev_set:
-            self.dev_loader = data_stream(dev_set, self.model.vocab_model.word_vocab, self.model.vocab_model.node_vocab, self.model.vocab_model.node_type_vocab, self.model.vocab_model.edge_type_vocab, config=config,
+            self.dev_loader = data_stream(dev_set, dev_graphs, graph_corpus, self.model.vocab_model.word_vocab, self.model.vocab_model.node_vocab, self.model.vocab_model.node_type_vocab, self.model.vocab_model.edge_type_vocab, config=config,
                  isShuffle=False, isLoop=True, isSort=True, ext_vocab=config['pointer'], bert_tokenizer=bert_tokenizer)
             self._n_dev_batches = self.dev_loader.get_num_batch()
         else:
             self.dev_loader = None
 
         if test_set:
-            self.test_loader = data_stream(test_set, self.model.vocab_model.word_vocab, self.model.vocab_model.node_vocab, self.model.vocab_model.node_type_vocab, self.model.vocab_model.edge_type_vocab, config=config,
+            self.test_loader = data_stream(test_set, test_graphs, graph_corpus, self.model.vocab_model.word_vocab, self.model.vocab_model.node_vocab, self.model.vocab_model.node_type_vocab, self.model.vocab_model.edge_type_vocab, config=config,
                  isShuffle=False, isLoop=False, isSort=config.get('sort_test_data', True), batch_size=config.get('test_batch_size', config['batch_size']), ext_vocab=config['pointer'], bert_tokenizer=bert_tokenizer)
             self._n_test_batches = self.test_loader.get_num_batch()
             self._n_test_examples = len(test_set)

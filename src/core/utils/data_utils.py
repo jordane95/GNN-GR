@@ -8,6 +8,7 @@ import re
 import io
 import random
 import string
+from typing import List, Tuple, Dict
 from collections import Counter, defaultdict, OrderedDict
 from nltk.tokenize import wordpunct_tokenize, word_tokenize
 
@@ -27,13 +28,33 @@ from . import constants
 tokenize = lambda s: wordpunct_tokenize(s)
 
 
+def vectorize_triple_input(triple_batch, config, bert_model, training=True, device=None):
+    query_batch, pos_batch, neg_batch = triple_batch
+    query_batch_input =  vectorize_input(query_batch, config, bert_model, training, devce),
+    pos_batch_input = vectorize_input(pos_batch, config, bert_model, training, devce),
+    neg_batch_input = vectorize_input(neg_batch, config, bert_model, training, devce),
+    vectorized_triple = {
+        "query": query_batch_input,
+        "pos": pos_batch_input,
+        "neg": neg_batch_input,
+        "batch_size": query_batch_input['batch_size'],
+    }
+    return vectorized_triple
+
+
 def vectorize_input(batch, config, bert_model, training=True, device=None):
+    """
+    Args:
+        batch (InstanceBatch): 
+    Returns:
+
+    """
     # Check there is at least one valid example in batch (containing targets):
     if not batch:
         return None
 
     # Relevant parameters:
-    batch_size = len(batch.out_seqs)
+    batch_size = len(batch.batch_size)
 
     in_graphs = {}
     for k, v in batch.in_graphs.items():
@@ -42,64 +63,75 @@ def vectorize_input(batch, config, bert_model, training=True, device=None):
         else:
             in_graphs[k] = torch.LongTensor(v).to(device) if device else torch.LongTensor(v)
 
-    out_seqs = torch.LongTensor(batch.out_seqs)
-    out_seq_lens = torch.LongTensor(batch.out_seq_lens)
+    # out_seqs = torch.LongTensor(batch.out_seqs)
+    # out_seq_lens = torch.LongTensor(batch.out_seq_lens)
 
 
     with torch.set_grad_enabled(training):
         example = {'batch_size': batch_size,
                    'in_graphs': in_graphs,
-                   'targets': out_seqs.to(device) if device else out_seqs,
-                   'target_lens': out_seq_lens.to(device) if device else out_seq_lens,
-                   'target_src': batch.out_seq_src,
                    'oov_dict': batch.oov_dict}
-
-        if config['f_ans'] or config.get('f_ans_pool', None):
-            answers = torch.LongTensor(batch.answers)
-            answer_lens = torch.LongTensor(batch.answer_lens)
-            num_answers = torch.LongTensor(batch.num_answers)
-            example['answers'] = answers.to(device) if device else answers
-            example['answer_lens'] = answer_lens.to(device) if device else answer_lens
-            example['num_answers'] = num_answers.to(device) if device else num_answers
-
+        
         return example
 
 def prepare_datasets(config):
+    """
+    Args:
+        config (Dict):
+    Returns:
+        dataset (Dict[str, object])
+    """
     levi_graph = config.get('levi_graph', True)
 
     if config['trainset'] is not None:
-        train_set, train_seq_lens = load_data(config['trainset'], isLower=True, levi_graph=levi_graph)
+        train_set, train_graphs = load_data(config['trainset'], config['train'], isLower=True, levi_graph=levi_graph)
         print('# of training examples: {}'.format(len(train_set)))
-        print('[ Max training seq length: {} ]'.format(np.max(train_seq_lens)))
-        print('[ Min training seq length: {} ]'.format(np.min(train_seq_lens)))
-        print('[ Mean training seq length: {} ]'.format(int(np.mean(train_seq_lens))))
     else:
         train_set = None
 
     if config['devset'] is not None:
-        dev_set, dev_seq_lens = load_data(config['devset'], isLower=True, levi_graph=levi_graph)
+        dev_set, dev_graphs = load_data(config['devset'], config['dev'], isLower=True, levi_graph=levi_graph)
         print('# of dev examples: {}'.format(len(dev_set)))
-        print('[ Max dev seq length: {} ]'.format(np.max(dev_seq_lens)))
-        print('[ Min dev seq length: {} ]'.format(np.min(dev_seq_lens)))
-        print('[ Mean dev seq length: {} ]'.format(int(np.mean(dev_seq_lens))))
     else:
         dev_set = None
 
     if config['testset'] is not None:
-        test_set, test_seq_lens = load_data(config['testset'], isLower=True, levi_graph=levi_graph)
+        test_set, test_graphs = load_data(config['testset'], config['test'], isLower=True, levi_graph=levi_graph)
         print('# of testing examples: {}'.format(len(test_set)))
-        print('[ Max testing seq length: {} ]'.format(np.max(test_seq_lens)))
-        print('[ Min testing seq length: {} ]'.format(np.min(test_seq_lens)))
-        print('[ Mean testing seq length: {} ]'.format(int(np.mean(test_seq_lens))))
     else:
         test_set = None
 
-    return {'train': train_set, 'dev': dev_set, 'test': test_set}
+    dataset = {
+        'train': train_set, 'dev': dev_set, 'test': test_set,
+        'train_graphs': train_graphs, 'dev_graphs': dev_graphs, 'test_graphs': test_graphs,
+    }
+    return dataset
 
 
-def load_data(inpath, isLower=True, levi_graph=True):
-    all_instances = []
-    all_seq_lens = []
+def load_data(inpath, triple_path, isLower=True, levi_graph=True):
+    """Load data from path
+
+    Args:
+        inpath (str): path to the graph corpus
+        triple_path (str): path to the triples for retrieval
+        isLower (bool):
+        levi_graph (bool):
+    Returns:
+        all_instances (List[Tuple[]]): all triples consist of graph ids
+        all_graphs (Dict[int, Sequence]): graph corpus, id -> graph
+    """
+    all_instances: List[Tuple] = []
+
+    with open(triple_path, 'r') as f:
+        for line in f:
+            qid, pos_ids, neg_ids = line.strip().split('\t')
+            qid = int(qid)
+            pos_ids = list(map(int, pos_ids.split(',')))
+            neg_ids = list(map(int, neg_ids.split(',')))
+            instance = (qid, pos_ids, neg_ids)
+            all_instances.append(instance)
+
+    all_graphs: Dict[int, object] = {}
 
     with open(inpath, 'r') as f:
         for line in f:
@@ -173,22 +205,30 @@ def load_data(inpath, isLower=True, levi_graph=True):
                             edge_index += 1
 
                 assert len(graph['g_edge_type_words']) == edge_index
-
-            all_instances.append([Sequence(graph, is_graph=True, isLower=isLower), Sequence(out_seq, isLower=isLower, end_sym=constants._EOS_TOKEN), [Sequence(x, isLower=isLower) for x in answers]])
-            all_seq_lens.append(len(all_instances[-1][1].words))
-    return all_instances, all_seq_lens
+            
+            all_graphs[jo['qId']] = Sequence(graph, is_graph=True, isLower=isLower)
+    return all_instances, all_graphs
 
 
 
 class DataStream(object):
-    def __init__(self, all_instances, word_vocab, node_vocab, node_type_vocab, edge_type_vocab, config=None,
+    def __init__(self, all_instances, query_graphs, graph_corpus, word_vocab, node_vocab, node_type_vocab, edge_type_vocab, config=None,
                  isShuffle=False, isLoop=False, isSort=True, batch_size=-1, ext_vocab=False, bert_tokenizer=None):
+        """Dataloader for training and evaluation
 
+        Args:
+            all_instances (List[Tuple[Union[int, List[int]]]]): triples
+            query_graphs (Dict[int, Sequence]): graph id -> graph
+            graph_corpus (Dict[int, Sequence]): graph id -> graph
+            ...
+        Returns:
+            None
+        """
         self.config = config
         if batch_size == -1: batch_size = config['batch_size']
         # sort instances based on length
-        if isSort:
-            all_instances = sorted(all_instances, key=lambda instance: len(instance[0].graph['g_node_name_words']))
+        # if isSort:
+        #     all_instances = sorted(all_instances, key=lambda instance: len(instance[0].graph['g_node_name_words']))
 
         self.num_instances = len(all_instances)
 
@@ -196,8 +236,22 @@ class DataStream(object):
         batch_spans = padding_utils.make_batches(self.num_instances, batch_size)
         self.batches = []
         for batch_index, (batch_start, batch_end) in enumerate(batch_spans):
-            cur_instances = all_instances[batch_start: batch_end]
-            cur_batch = InstanceBatch(cur_instances, config, word_vocab, node_vocab, node_type_vocab, edge_type_vocab, ext_vocab=ext_vocab)
+            cur_instances = all_instances[batch_start: batch_end] # List[Tuple]
+
+            query_ids = [instance[0] for instance in cur_instances] # List[int]
+            pos_ids = [instance[1][0] for instance in cur_instances] # always use the first as positive
+            neg_ids = [instance[2][0] for instance in cur_instances] # TODO: random sample a negative
+
+            query_graph_batch = [query_graphs[qid] for qid in query_ids]
+            pos_graph_batch = [graph_corpus[pid] for pid in pos_ids]
+            neg_graph_batch = [graph_corpus[nid] for nid in neg_ids]
+
+            query_batch = InstanceBatch(query_graph_batch, config, word_vocab, node_vocab, node_type_vocab, edge_type_vocab, ext_vocab=ext_vocab)
+            pos_batch = InstanceBatch(pos_graph_batch, config, word_vocab, node_vocab, node_type_vocab, edge_type_vocab, ext_vocab=ext_vocab)
+            neg_batch = InstanceBatch(neg_graph_batch, config, word_vocab, node_vocab, node_type_vocab, edge_type_vocab, ext_vocab=ext_vocab)
+
+            cur_batch = (query_batch, pos_batch, neg_batch)
+
             self.batches.append(cur_batch)
 
         self.num_batch = len(self.batches)
@@ -208,6 +262,10 @@ class DataStream(object):
         self.cur_pointer = 0
 
     def nextBatch(self):
+        """
+        Returns:
+            cur_batch (Tuple[InstanceBatch]): triple batches (query, pos, neg)
+        """
         if self.cur_pointer >= self.num_batch:
             if not self.isLoop: return None
             self.cur_pointer = 0
@@ -232,10 +290,16 @@ class DataStream(object):
 
 class InstanceBatch(object):
     def __init__(self, instances, config, word_vocab, node_vocab, node_type_vocab, edge_type_vocab, ext_vocab=False):
+        """
+        Args:
+            instances (List[Sequence]): Sequence instances of graphs
+            ...
+        """
         self.instances = instances
         self.batch_size = len(instances)
         self.oov_dict = None # out-of-vocabulary dict
 
+        """
         # Create word representation and length
         self.out_seq_src = []
         self.out_seqs = [] # [batch_size, seq2_len]
@@ -247,6 +311,7 @@ class InstanceBatch(object):
             self.num_answers = [] # [batch_size]
             if config['use_bert']:
                 self.answer_bert = []
+        """
 
         if ext_vocab:
             base_oov_idx = len(word_vocab)
@@ -257,9 +322,8 @@ class InstanceBatch(object):
         # Build graph
         self.in_graphs = vectorize_batch_graph(batch_graph, word_vocab, node_vocab, node_type_vocab,\
                              edge_type_vocab, self.oov_dict, kg_emb=config['kg_emb'], f_node_type=config.get('f_node_type', False), ext_vocab=ext_vocab)
-
-
-
+        
+        """
         for i, (_, seq2, seq3) in enumerate(instances):
             if ext_vocab:
                 seq2_idx = seq2ext_vocab_id(i, seq2.words, word_vocab, self.oov_dict)
@@ -299,7 +363,7 @@ class InstanceBatch(object):
             self.answers = padding_utils.pad_3d_vals_no_size(self.answers, fills=word_vocab.PAD)
             self.answer_lens = padding_utils.pad_2d_vals_no_size(self.answer_lens, fills=1)
             self.num_answers = np.array(self.num_answers, dtype=np.int32)
-
+        """
 
 class Sequence(object):
     def __init__(self, data, is_graph=False, isLower=False, end_sym=None):

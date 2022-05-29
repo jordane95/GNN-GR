@@ -401,6 +401,7 @@ class Graph2Seq(nn.Module):
       if self.pointer:
         r.ptr_probs = torch.zeros(target_length, batch_size)
 
+    """
     if self.enc_dec_adapter is None:
       decoder_state = encoder_state
     else:
@@ -507,7 +508,7 @@ class Graph2Seq(nn.Module):
         r.enc_attn_weights[di] = dec_enc_attn.data
         if self.pointer:
           r.ptr_probs[di] = dec_prob_ptr.squeeze(1).data
-
+    """
     return r
 
   def gather(self, input_tensor1, input_tensor2, num1, num2, max_num_graph_elements):

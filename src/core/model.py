@@ -200,6 +200,11 @@ class Model(object):
             print('[ WARN: Saving failed... continuing anyway. ]')
 
     def predict(self, batch, step, forcing_ratio=1, rl_ratio=0, update=True, out_predictions=False, mode='train'):
+      """
+      Args:
+        batch (Dict[str, Dict[str, object]]): vectorized triple dict input
+        ...
+      """
         self.network.train(update)
 
         if mode == 'train':
@@ -241,79 +246,45 @@ class Model(object):
 
 # Training phase
 def train_batch(batch, network, vocab, criterion, forcing_ratio, rl_ratio, config, wmd=None):
+  """
+  Args:
+    batch (Dict[str, Dict[str, object]]): triples
+  """
     network.train(True)
 
-    with torch.set_grad_enabled(True):
-        ext_vocab_size = batch['oov_dict'].ext_vocab_size if batch['oov_dict'] else None
+    batch_size = batch['batch_size']
 
-        network_out = network(batch, batch['targets'], criterion,
-                forcing_ratio=forcing_ratio, partial_forcing=config['partial_forcing'], \
-                sample=config['sample'], ext_vocab_size=ext_vocab_size, \
-                include_cover_loss=config['show_cover_loss'])
+    graph_output = {}
 
-        if rl_ratio > 0:
-            batch_size = batch['batch_size']
-            sample_out = network(batch, saved_out=network_out, criterion=criterion, \
-                    criterion_reduction=False, criterion_nll_only=True, \
-                    sample=True, ext_vocab_size=ext_vocab_size)
-            baseline_out = network(batch, saved_out=network_out, visualize=False, \
-                                    ext_vocab_size=ext_vocab_size)
+    for key in batch:
+      graph_batch = batch[key]
+      with torch.set_grad_enabled(True):
+          ext_vocab_size = graph_batch['oov_dict'].ext_vocab_size if graph_batch['oov_dict'] else None
 
-            sample_out_decoded = sample_out.decoded_tokens.transpose(0, 1)
-            baseline_out_decoded = baseline_out.decoded_tokens.transpose(0, 1)
+          network_out = network(graph_batch, criterion=criterion,
+                  forcing_ratio=forcing_ratio, partial_forcing=config['partial_forcing'], \
+                  sample=config['sample'], ext_vocab_size=ext_vocab_size, \
+                  include_cover_loss=config['show_cover_loss'])
+          graph_out[key] = network_out
+    
+    pooler = lambda x: x[0] if network.rnn_type == 'lstm' else x
+    
+    query_reps = pooler(graph_out['query'].encoder_state) # (batch_size, graph_emb_dim)
+    pos_reps = pooler(graph_out['pos'].encoder_state)
+    neg_reps = pooler(graph_out['neg'].encoder_state)
+    
+    doc_reps = torch.cat((pos_reps, neg_reps)) # (batch_size*2, graph_emb_dim)
 
-            neg_reward = []
-            rl_reward_metric_list = config['rl_reward_metric'].split(',')
-            if 'rl_reward_metric_ratio' in config:
-                rl_reward_metric_ratio = [float(x) for x in config['rl_reward_metric_ratio'].split(',')]
-            else:
-                rl_reward_metric_ratio = None
+    scores = torch.matmul(query_reps, doc_reps.transpose(0, 1)) # (batch_size, batch_size * 2)
+    scores = scores.view(batch_size, -1)
 
-            for i in range(batch_size):
-                scores = eval_batch_output([batch['target_src'][i]], vocab, batch['oov_dict'],
-                                       [sample_out_decoded[i]], [baseline_out_decoded[i]])
+    target = torch.arange(scores.size(0), device=scores.device, dtype=torch.long)
 
-                # greedy_score = scores[1][config['rl_reward_metric']]
-                # reward_ = scores[0][config['rl_reward_metric']] - greedy_score
-                reward_ = 0
-                for index, rl_reward_metric in enumerate(rl_reward_metric_list):
-                    greedy_score = scores[1][rl_reward_metric]
-                    tmp_reward_ = (scores[0][rl_reward_metric] - greedy_score)
-                    if rl_reward_metric_ratio is not None:
-                        tmp_reward_ = tmp_reward_ * rl_reward_metric_ratio[index]
+    loss = nn.CrossEntropy(scores, target)
 
-                    reward_ += tmp_reward_
+    loss_value = loss.item()
 
-
-                if config['rl_wmd_ratio'] > 0:
-                    # Add word mover's distance
-                    sample_seq = batch_decoded_index2word([sample_out_decoded[i]], vocab, batch['oov_dict'])[0]
-                    greedy_seq = batch_decoded_index2word([baseline_out_decoded[i]], vocab, batch['oov_dict'])[0]
-
-                    sample_wmd = -wmd.distance(sample_seq, batch['target_src'][i]) / max(len(sample_seq.split()), 1)
-                    greedy_wmd = -wmd.distance(greedy_seq, batch['target_src'][i]) / max(len(greedy_seq.split()), 1)
-                    wmd_reward_ = sample_wmd - greedy_wmd
-                    wmd_reward_ = max(min(wmd_reward_, config['max_wmd_reward']), -config['max_wmd_reward'])
-                    reward_ += config['rl_wmd_ratio'] * wmd_reward_
-
-                neg_reward.append(reward_)
-            neg_reward = to_cuda(torch.Tensor(neg_reward), network.device)
-
-
-            # if sample > baseline, the reward is positive (i.e. good exploration), rl_loss is negative
-            rl_loss = torch.sum(neg_reward * sample_out.loss) / batch_size
-            rl_loss_value = torch.sum(neg_reward * sample_out.loss_value).item() / batch_size
-            loss = (1 - rl_ratio) * network_out.loss + rl_ratio * rl_loss
-            loss_value = (1 - rl_ratio) * network_out.loss_value + rl_ratio * rl_loss_value
-
-            metrics = eval_batch_output(batch['target_src'], vocab, \
-                            batch['oov_dict'], baseline_out.decoded_tokens)[0]
-
-        else:
-            loss = network_out.loss
-            loss_value = network_out.loss_value
-            metrics = eval_batch_output(batch['target_src'], vocab, \
-                            batch['oov_dict'], network_out.decoded_tokens)[0]
+    metrics = 1.0
 
     return loss, loss_value, metrics
 
