@@ -153,6 +153,7 @@ class ModelHandler(object):
             self.logger.write_to_file(format_str)
             print(format_str)
 
+            """
             print("\n>>> Dev Epoch: [{} / {}]".format(self._epoch, self.config['max_epochs']))
             self.logger.write_to_file("\n>>> Dev Epoch: [{} / {}]".format(self._epoch, self.config['max_epochs']))
             self._run_epoch(self.dev_loader, training=False, verbose=self.config['verbose'])
@@ -174,7 +175,8 @@ class ModelHandler(object):
                 format_str = "!!! Updated: " + self.best_metric_to_str(self._best_metrics)
                 self.logger.write_to_file(format_str)
                 print(format_str)
-
+            """
+            
             self._reset_metrics()
             if rl_ratio > 0:
                 self.config['rl_ratio'] = min(self.config['max_rl_ratio'], self.config['rl_ratio'] ** self.config['rl_ratio_power'])

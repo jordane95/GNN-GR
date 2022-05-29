@@ -22,7 +22,7 @@ def main(config):
     set_random_seed(config['random_seed'])
     model = ModelHandler(config)
     model.train()
-    model.test()
+    # model.test()
 
 
 def grid_search_main(config):
