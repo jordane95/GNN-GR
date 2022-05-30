@@ -301,13 +301,10 @@ def dev_batch(batch, network, vocab, criterion=None, show_cover_loss=False):
 
   for key in ['query', 'pos', 'neg']:
     graph_batch = batch[key]
-    with torch.set_grad_enabled(True):
+    with torch.no_grad():
         ext_vocab_size = graph_batch['oov_dict'].ext_vocab_size if graph_batch['oov_dict'] else None
 
-        network_out = network(graph_batch, criterion=criterion,
-                forcing_ratio=forcing_ratio, partial_forcing=config['partial_forcing'], \
-                sample=config['sample'], ext_vocab_size=ext_vocab_size, \
-                include_cover_loss=config['show_cover_loss'])
+        network_out = network(graph_batch, criterion=criterion, ext_vocab_size=ext_vocab_size, include_cover_loss=show_cover_loss)
         graph_output[key] = network_out
   
   pooler = lambda x: (lambda x: x[0] if network.rnn_type == 'lstm' else x)(x).squeeze(0)
@@ -342,14 +339,11 @@ def test_batch(batch, network, vocab, config):
 
     for key in ['query', 'pos', 'neg']:
       graph_batch = batch[key]
-      with torch.set_grad_enabled(True):
-          ext_vocab_size = graph_batch['oov_dict'].ext_vocab_size if graph_batch['oov_dict'] else None
+      with torch.no_grad():
+        ext_vocab_size = graph_batch['oov_dict'].ext_vocab_size if graph_batch['oov_dict'] else None
 
-          network_out = network(graph_batch, criterion=criterion,
-                  forcing_ratio=forcing_ratio, partial_forcing=config['partial_forcing'], \
-                  sample=config['sample'], ext_vocab_size=ext_vocab_size, \
-                  include_cover_loss=config['show_cover_loss'])
-          graph_output[key] = network_out
+        network_out = network(graph_batch, criterion=criterion, ext_vocab_size=ext_vocab_size, include_cover_loss=show_cover_loss)
+        graph_output[key] = network_out
     
     pooler = lambda x: (lambda x: x[0] if network.rnn_type == 'lstm' else x)(x).squeeze(0)
     
