@@ -384,7 +384,7 @@ class Graph2Seq(nn.Module):
       encoder_outputs = node_embedding
       encoder_state = (graph_embedding, graph_embedding) if self.rnn_type == 'lstm' else graph_embedding
 
-
+    target_length = 3
     # initialize return values
     r = Graph2SeqOutput(encoder_outputs, encoder_state,
                       torch.zeros(target_length, batch_size, dtype=torch.long))
