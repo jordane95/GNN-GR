@@ -287,7 +287,7 @@ def train_batch(batch, network, vocab, criterion, forcing_ratio, rl_ratio, confi
     predict = scores.argmax(dim=1)
     accuracy = sum(predict == target) / batch_size
 
-    metrics = {"BLEU_4": accuracy}
+    metrics = {"Bleu_4": accuracy}
 
     return loss, loss_value, metrics
 
@@ -325,7 +325,7 @@ def dev_batch(batch, network, vocab, criterion=None, show_cover_loss=False):
 
   predict = scores.argmax(dim=1)
   accuracy = sum(predict == target) / batch_size
-  metrics = {"BLEU_4": accuracy}
+  metrics = {"Bleu_4": accuracy}
 
   return loss_value, metrics
 
@@ -360,7 +360,7 @@ def test_batch(batch, network, vocab, config):
 
     predict = scores.argmax(dim=1)
     accuracy = sum(predict == target) / batch_size
-    metrics = {"BLEU_4": accuracy}
+    metrics = {"Bleu_4": accuracy}
     return metrics
 
 
