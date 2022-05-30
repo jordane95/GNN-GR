@@ -229,14 +229,6 @@ class Graph2Seq(nn.Module):
     if visualize and not (self.enc_attn or self.pointer):
       visualize = False  # nothing to visualize
 
-    if target_tensor is None:
-      target_length = self.max_dec_steps
-      target_mask = None
-    else:
-      target_tensor = target_tensor.transpose(1, 0)
-      target_length = target_tensor.size(0)
-      target_mask = create_mask(ex['target_lens'], target_length, self.device)
-
 
     if forcing_ratio == 1:
       # if fully teacher-forced, it may be possible to eliminate the for-loop over decoder steps
@@ -401,114 +393,6 @@ class Graph2Seq(nn.Module):
       if self.pointer:
         r.ptr_probs = torch.zeros(target_length, batch_size)
 
-    """
-    if self.enc_dec_adapter is None:
-      decoder_state = encoder_state
-    else:
-      if self.rnn_type == 'lstm':
-        decoder_state = tuple([self.enc_dec_adapter[i](x) for i, x in enumerate(encoder_state)])
-      else:
-        decoder_state = self.enc_dec_adapter(encoder_state)
-    decoder_hiddens = []
-    enc_attn_weights = []
-
-
-    enc_context = None
-    dec_prob_ptr_tensor = []
-    decoder_input = to_cuda(torch.tensor([self.word_vocab.SOS] * batch_size), self.device)
-    for di in range(target_length):
-      decoder_embedded = self.word_embed(self.filter_oov(decoder_input, ext_vocab_size))
-      decoder_embedded = dropout(decoder_embedded, self.word_dropout, shared_axes=[-2], training=self.training)
-      if enc_attn_weights:
-        coverage_vector = self.get_coverage_vector(enc_attn_weights)
-      else:
-        coverage_vector = None
-      decoder_output, decoder_state, dec_enc_attn, dec_prob_ptr, enc_context = \
-        self.decoder(decoder_embedded, decoder_state, encoder_outputs,
-                     torch.cat(decoder_hiddens) if decoder_hiddens else None, coverage_vector,
-                     input_mask=input_mask,
-                     input_node_mask=input_node_mask,
-                     encoder_word_idx=input_graphs['g_oov_idx'] if self.pointer else None, ext_vocab_size=ext_vocab_size,
-                     log_prob=log_prob,
-                     prev_enc_context=enc_context)
-      dec_prob_ptr_tensor.append(dec_prob_ptr)
-      if self.dec_attn:
-        decoder_hiddens.append(decoder_state[0] if self.rnn_type == 'lstm' else decoder_state)
-
-      # save the decoded tokens
-      if not sample:
-        _, top_idx = decoder_output.data.topk(1)  # top_idx shape: (batch size, k=1)
-      else:
-        prob_distribution = torch.exp(decoder_output) if log_prob else decoder_output
-        top_idx = torch.multinomial(prob_distribution, 1)
-      top_idx = top_idx.squeeze(1).detach()  # detach from history as input
-      r.decoded_tokens[di] = top_idx
-
-
-      # decide the next input
-      if use_teacher_forcing or (use_teacher_forcing is None and random.random() < forcing_ratio):
-        decoder_input = target_tensor[di]  # teacher forcing
-      else:
-        decoder_input = top_idx
-
-      # compute loss
-      if criterion:
-        if target_tensor is None:
-          gold_standard = top_idx  # for sampling
-        else:
-          gold_standard = target_tensor[di] if not rl_loss else decoder_input
-        if not log_prob:
-          decoder_output = torch.log(decoder_output + VERY_SMALL_NUMBER)  # necessary for NLLLoss
-
-
-        if self.eps_label_smoothing is not None:
-          eps = self.eps_label_smoothing
-          n_class = decoder_output.size(1)
-
-          one_hot = to_cuda(torch.zeros_like(decoder_output).scatter(1, gold_standard.view(-1, 1), 1), self.device)
-          one_hot = one_hot * (1 - eps) + (1 - one_hot) * eps / (n_class - 1)
-
-
-          non_pad_mask = gold_standard.ne(self.word_vocab.PAD).float()
-          nll_loss = -(one_hot * decoder_output).sum(dim=1)
-          nll_loss = nll_loss * non_pad_mask
-
-          if criterion_reduction:
-            nll_loss = nll_loss.sum() / torch.sum(non_pad_mask)
-
-          r.loss += nll_loss
-          r.loss_value += nll_loss
-
-        else:
-          if criterion_reduction:
-            nll_loss = criterion(decoder_output, gold_standard)
-            r.loss += nll_loss
-            r.loss_value += nll_loss.item()
-          else:
-            nll_loss = F.nll_loss(decoder_output, gold_standard, ignore_index=self.word_vocab.PAD, reduction='none')
-            r.loss += nll_loss
-            r.loss_value += nll_loss
-
-
-      # update attention history and compute coverage loss
-      if self.enc_attn_cover or (criterion and self.cover_loss > 0):
-        if not criterion_nll_only and coverage_vector is not None and criterion and self.cover_loss > 0:
-          if criterion_reduction:
-            coverage_loss = torch.sum(torch.min(coverage_vector, dec_enc_attn)) / batch_size * self.cover_loss
-            r.loss += coverage_loss
-            if include_cover_loss: r.loss_value += coverage_loss.item()
-          else:
-            coverage_loss = torch.sum(torch.min(coverage_vector, dec_enc_attn), dim=-1) * self.cover_loss
-            r.loss += coverage_loss
-            if include_cover_loss: r.loss_value += coverage_loss
-
-        enc_attn_weights.append(dec_enc_attn.unsqueeze(0))
-      # save data for visualization
-      if visualize:
-        r.enc_attn_weights[di] = dec_enc_attn.data
-        if self.pointer:
-          r.ptr_probs[di] = dec_prob_ptr.squeeze(1).data
-    """
     return r
 
   def gather(self, input_tensor1, input_tensor2, num1, num2, max_num_graph_elements):
