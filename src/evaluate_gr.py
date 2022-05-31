@@ -46,7 +46,6 @@ def main(config):
     q_reps, q_lookup = model.encode(model.test_loader)
     p_reps, p_lookup = model.encode(model.train_loader)
 
-    retriever = BaseFaissIPRetriever()
     retriever = BaseFaissIPRetriever(p_reps)
     retriever.add(p_reps)
 
