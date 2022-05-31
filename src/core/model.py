@@ -233,6 +233,9 @@ class Model(object):
         else:
             query_reps, query_ids = test_batch(batch, self.network, self.vocab_model.word_vocab, self.config)
             loss_value = None
+            metrics = {
+                "none": None,
+            }
 
         output = {
             'loss': loss_value,
