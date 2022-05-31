@@ -66,22 +66,26 @@ def main(config):
     precisions = []
     recalls = []
     f1s = []
+    hits = 0
     for qid, pred_pids in zip(q_lookup, psg_indices):
         pred_pids: List[int]
         qid: int
         true_pids: List[int] = test_labels[qid]
         p = len(set(pred_pids) & set(true_pids)) / len(pred_pids)
         r = len(set(pred_pids) & set(true_pids)) / len(true_pids)
+        hits += 0 if r == 0 else 1
         precisions.append(p)
         recalls.append(r)
         f1s.append(2*p*r/(p+r+1e-7))
     precision = sum(precisions) / len(precisions)
     recall = sum(recalls) / len(recalls)
     f1 = sum(f1s) / len(f1s)
+    accuracy = hits / len(q_lookup)
 
     logger.info(f"Precision@{depth}: {precision}")
     logger.info(f"Recall@{depth}: {recall}")
     logger.info(f"F1@{depth}: {f1}")
+    logger.info(f"Accuracy@{depth}: {accuracy}")
     
 
 
