@@ -231,7 +231,7 @@ class Model(object):
             loss_value, metrics = dev_batch(batch, self.network, self.vocab_model.word_vocab, criterion=None, show_cover_loss=self.config['show_cover_loss'])
 
         else:
-            metrics = test_batch(batch, self.network, self.vocab_model.word_vocab, self.config)
+            query_reps, query_ids = test_batch(batch, self.network, self.vocab_model.word_vocab, self.config)
             loss_value = None
 
         output = {
@@ -240,7 +240,8 @@ class Model(object):
         }
 
         if mode == 'test' and out_predictions:
-            output['predictions'] = decoded_batch
+            output['query_reps'] = query_reps
+            output['query_ids'] = query_ids
         return output
 
 
@@ -335,33 +336,17 @@ def test_batch(batch, network, vocab, config):
     network.train(False)
     batch_size = batch['batch_size']
 
-    graph_output = {}
-
-    for key in ['query', 'pos', 'neg']:
-      graph_batch = batch[key]
-      with torch.no_grad():
+    graph_batch = batch['query']
+    with torch.no_grad():
         ext_vocab_size = graph_batch['oov_dict'].ext_vocab_size if graph_batch['oov_dict'] else None
 
         network_out = network(graph_batch, criterion=criterion, ext_vocab_size=ext_vocab_size, include_cover_loss=show_cover_loss)
-        graph_output[key] = network_out
     
     pooler = lambda x: (lambda x: x[0] if network.rnn_type == 'lstm' else x)(x).squeeze(0)
     
-    query_reps = pooler(graph_output['query'].encoder_state) # (batch_size, graph_emb_dim)
-    pos_reps = pooler(graph_output['pos'].encoder_state)
-    neg_reps = pooler(graph_output['neg'].encoder_state)
-    
-    doc_reps = torch.cat((pos_reps, neg_reps)) # (batch_size*2, graph_emb_dim)
-
-    scores = torch.matmul(query_reps, doc_reps.transpose(0, 1)) # (batch_size, batch_size * 2)
-    scores = scores.view(batch_size, -1)
-
-    target = torch.arange(scores.size(0), device=scores.device, dtype=torch.long)
-
-    predict = scores.argmax(dim=1)
-    accuracy = sum(predict == target) / batch_size
-    metrics = {"Bleu_4": accuracy}
-    return metrics
+    query_reps = pooler(network_out.encoder_state) # (batch_size, graph_emb_dim)
+    query_ids = batch['qids'] # List[int]
+    return query_reps, query_ids
 
 
 class Hypothesis(object):

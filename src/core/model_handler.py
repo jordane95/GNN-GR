@@ -8,6 +8,8 @@ import os
 import time
 import json
 
+import numpy as np
+
 import torch
 from torch.utils.data import DataLoader
 import torch.backends.cudnn as cudnn
@@ -190,10 +192,7 @@ class ModelHandler(object):
         return self._best_metrics
 
 
-    def test(self):
-        if self.test_loader is None:
-            print("No testing set specified -- skipped testing.")
-            return
+    def encode(self, data_loader):
 
         # Restore best model
         print('Restoring best model')
@@ -211,10 +210,12 @@ class ModelHandler(object):
             for param in self.bert_model.parameters():
                 param.requires_grad = False
         print('[ Beam size: {} ]'.format(self.config['beam_size']))
-        output, gold = self._run_epoch(self.test_loader, training=False, verbose=0,
+        query_reps, query_ids = self._run_epoch(data_loader, training=False, verbose=0,
                                  out_predictions=self.config['out_predictions'])
 
         timer.finish()
+
+        """
         # Note: corpus-level BLEU computes micro-average
         metrics = evaluate_predictions(gold, output)
         format_str = "[test] | test_exs = {} | step: [{} / {}]".format(
@@ -239,9 +240,15 @@ class ModelHandler(object):
 
         print("Finished Testing: {}".format(self.dirname))
         self.logger.close()
-        return metrics
+        """
+        return query_reps, query_ids
 
     def _run_epoch(self, data_loader, training=True, rl_ratio=0, verbose=10, out_predictions=False):
+        """
+        Returns:
+            query_reps (numpy.ndarray): (num_samples, emb_dim)
+            query_ids (numpy.ndarray): (num_samples)
+        """
         start_time = time.time()
         mode = "train" if training else ("test" if self.is_test else "dev")
 
@@ -249,6 +256,9 @@ class ModelHandler(object):
             self.model.optimizer.zero_grad()
         output = []
         gold = []
+
+        query_reps = []
+        query_ids = []
         for step in range(data_loader.get_num_batch()):
             input_batch = data_loader.nextBatch()
             x_batch = self.vectorize_input(input_batch, self.config, self.bert_model, training=training, device=self.device)
@@ -272,9 +282,14 @@ class ModelHandler(object):
                 print('used_time: {:0.2f}s'.format(time.time() - start_time))
 
             if mode == 'test' and out_predictions:
-                output.extend(res['predictions'])
-                gold.extend(x_batch['target_src'])
-        return output, gold
+                query_reps.append(res['query_reps'].cpu()) # List[Tensor]
+                query_ids.extend(res['query_ids']) # List[int]
+                # gold.extend(x_batch['target_src'])
+        
+        query_reps = torch.cat(query_reps).numpy()
+        query_ids = np.array(query_ids)
+
+        return query_reps, query_ids
 
     def self_report(self, step, mode='train'):
         if mode == "train":

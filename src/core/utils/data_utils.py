@@ -29,7 +29,8 @@ tokenize = lambda s: wordpunct_tokenize(s)
 
 
 def vectorize_triple_input(triple_batch, config, bert_model, training=True, device=None):
-    query_batch, pos_batch, neg_batch = triple_batch
+    query_batch, pos_batch, neg_batch = triple_batch['query'], triple['pos'], triple['neg']
+    query_ids = triple_batch['qids']
     query_batch_input = vectorize_input(query_batch, config, bert_model, training, device)
     pos_batch_input = vectorize_input(pos_batch, config, bert_model, training, device)
     neg_batch_input = vectorize_input(neg_batch, config, bert_model, training, device)
@@ -38,6 +39,7 @@ def vectorize_triple_input(triple_batch, config, bert_model, training=True, devi
         "pos": pos_batch_input,
         "neg": neg_batch_input,
         "batch_size": query_batch_input['batch_size'],
+        "qids": query_ids,
     }
     return vectorized_triple
 
@@ -232,6 +234,8 @@ class DataStream(object):
 
         self.num_instances = len(all_instances)
 
+        self.data = all_instances
+
         # distribute questions into different buckets
         batch_spans = padding_utils.make_batches(self.num_instances, batch_size)
         self.batches = []
@@ -250,7 +254,13 @@ class DataStream(object):
             pos_batch = InstanceBatch(pos_graph_batch, config, word_vocab, node_vocab, node_type_vocab, edge_type_vocab, ext_vocab=ext_vocab)
             neg_batch = InstanceBatch(neg_graph_batch, config, word_vocab, node_vocab, node_type_vocab, edge_type_vocab, ext_vocab=ext_vocab)
 
-            cur_batch = (query_batch, pos_batch, neg_batch)
+            # cur_batch = (query_batch, pos_batch, neg_batch)
+            cur_batch = {
+                "query": query_batch,
+                "pos": pos_batch,
+                "neg": neg_batch,
+                "qids": query_ids,
+            }
 
             self.batches.append(cur_batch)
 
@@ -264,7 +274,7 @@ class DataStream(object):
     def nextBatch(self):
         """
         Returns:
-            cur_batch (Tuple[InstanceBatch]): triple batches (query, pos, neg)
+            cur_batch (Dict[str, Union[List[int], InstanceBatch]]): triple batches (query, pos, neg)
         """
         if self.cur_pointer >= self.num_batch:
             if not self.isLoop: return None
