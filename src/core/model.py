@@ -340,7 +340,7 @@ def test_batch(batch, network, vocab, config):
     with torch.no_grad():
         ext_vocab_size = graph_batch['oov_dict'].ext_vocab_size if graph_batch['oov_dict'] else None
 
-        network_out = network(graph_batch, criterion=criterion, ext_vocab_size=ext_vocab_size, include_cover_loss=show_cover_loss)
+        network_out = network(graph_batch, ext_vocab_size=ext_vocab_size)
     
     pooler = lambda x: (lambda x: x[0] if network.rnn_type == 'lstm' else x)(x).squeeze(0)
     
