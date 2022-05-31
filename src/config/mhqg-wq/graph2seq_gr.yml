@@ -11,6 +11,8 @@ wmd_emb_file: null
 saved_vocab_file: '../data/mhqg-wq/vocab_model_min3'
 pretrained: '../out/mhqg-wq/graph2seq_ae'
 
+depth: 20
+
 # Output
 out_dir: null
 

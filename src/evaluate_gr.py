@@ -42,6 +42,7 @@ def set_random_seed(seed):
 def main(config):
     print_config(config)
     set_random_seed(config['random_seed'])
+
     model = ModelHandler(config)
     q_reps, q_lookup = model.encode(model.test_loader)
     p_reps, p_lookup = model.encode(model.train_loader)
@@ -49,8 +50,10 @@ def main(config):
     retriever = BaseFaissIPRetriever(p_reps)
     retriever.add(p_reps)
 
+    depth = config['depth']
+
     logger.info('Index Search Start')
-    all_scores, psg_indices = search_queries(retriever, q_reps, p_lookup, batch_size=-1, depth=5)
+    all_scores, psg_indices = search_queries(retriever, q_reps, p_lookup, batch_size=-1, depth=depth)
     logger.info('Index Search Finished')
 
     test_data = model.test_loader.data # List[Tuple[int, List[int], List[int]]]
@@ -75,8 +78,6 @@ def main(config):
     precision = sum(precisions) / len(precisions)
     recall = sum(recalls) / len(recalls)
     f1 = sum(f1s) / len(f1s)
-
-    depth = 5
 
     logger.info(f"Precision@{depth}: {precision}")
     logger.info(f"Recall@{depth}: {recall}")
