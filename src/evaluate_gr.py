@@ -76,9 +76,11 @@ def main(config):
     recall = sum(recalls) / len(recalls)
     f1 = sum(f1s) / len(f1s)
 
-    logger.info(f"Precision@{args.depth}: {precision}")
-    logger.info(f"Recall@{args.depth}: {recall}")
-    logger.info(f"F1@{args.depth}: {f1}")
+    depth = 5
+
+    logger.info(f"Precision@{depth}: {precision}")
+    logger.info(f"Recall@{depth}: {recall}")
+    logger.info(f"F1@{depth}: {f1}")
     
 
 
