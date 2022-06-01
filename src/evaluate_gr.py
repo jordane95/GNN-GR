@@ -32,6 +32,13 @@ def search_queries(retriever, q_reps, p_lookup, batch_size=-1, depth=100):
     psg_indices = [[p_lookup[x] for x in q_dd] for q_dd in all_indices]
     return all_scores, psg_indices
 
+def write_ranking(corpus_indices, corpus_scores, q_lookup, ranking_save_file):
+    with open(os.path.join(ranking_save_file, "retrieved_test.json"), 'w') as f:
+        for qid, q_doc_scores, q_doc_indices in zip(q_lookup, corpus_scores, corpus_indices):
+            score_list = [(s, idx) for s, idx in zip(q_doc_scores, q_doc_indices)]
+            score_list = sorted(score_list, key=lambda x: x[0], reverse=True)
+            for s, idx in score_list:
+                f.write(f'{qid}\t{idx}\t{s}\n')
 
 def set_random_seed(seed):
     torch.manual_seed(seed)
@@ -86,7 +93,8 @@ def main(config):
     logger.info(f"Recall@{depth}: {recall}")
     logger.info(f"F1@{depth}: {f1}")
     logger.info(f"Accuracy@{depth}: {accuracy}")
-    
+
+    write_ranking(psg_indices, all_scores, q_lookup, config['save_ranking_to'])
 
 
 def grid_search_main(config):

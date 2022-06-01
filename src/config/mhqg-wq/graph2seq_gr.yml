@@ -12,6 +12,7 @@ saved_vocab_file: '../data/mhqg-wq/vocab_model_min3'
 pretrained: '../out/mhqg-wq/graph2seq_ae'
 
 depth: 20
+save_ranking_to: '../data/wq/rank.tsv'
 
 # Output
 out_dir: null
