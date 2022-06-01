@@ -33,7 +33,7 @@ def search_queries(retriever, q_reps, p_lookup, batch_size=-1, depth=100):
     return all_scores, psg_indices
 
 def write_ranking(corpus_indices, corpus_scores, q_lookup, ranking_save_file):
-    with open(os.path.join(ranking_save_file, "retrieved_test.json"), 'w') as f:
+    with open(ranking_save_file, 'w') as f:
         for qid, q_doc_scores, q_doc_indices in zip(q_lookup, corpus_scores, corpus_indices):
             score_list = [(s, idx) for s, idx in zip(q_doc_scores, q_doc_indices)]
             score_list = sorted(score_list, key=lambda x: x[0], reverse=True)
