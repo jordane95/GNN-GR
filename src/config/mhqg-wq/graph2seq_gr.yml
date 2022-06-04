@@ -19,7 +19,6 @@ save_dev_to: '../data/wq/dev_rank.tsv'
 save_test_to: '../data/wq/test_rank.tsv'
 
 
-
 # Output
 out_dir: null
 
