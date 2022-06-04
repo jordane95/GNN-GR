@@ -40,12 +40,21 @@ def search_queries(retriever, q_reps, p_lookup, batch_size=-1, depth=100):
     return all_scores, psg_indices
 
 def write_ranking(corpus_indices, corpus_scores, q_lookup, ranking_save_file):
+    """
+    Args:
+        corpus_indices (List[Lit[int]]): (num_samples, depth)
+        corpus_scores :
+        q_lookup (List[int]): maps qidx -> qid
+        ranking_save_file (str): save path
+    Returns:
+        None
+    """
     with open(ranking_save_file, 'w') as f:
         for qid, q_doc_scores, q_doc_indices in zip(q_lookup, corpus_scores, corpus_indices):
             score_list = [(s, idx) for s, idx in zip(q_doc_scores, q_doc_indices)]
             score_list = sorted(score_list, key=lambda x: x[0], reverse=True)
-            for s, idx in score_list:
-                f.write(f'{qid}\t{idx}\t{s}\n')
+            psg_ids = ",".join([str(x[1]) for x in score_list])
+            f.write(f"{qid}\t{psg_ids}\n")
 
 def set_random_seed(seed):
     torch.manual_seed(seed)
