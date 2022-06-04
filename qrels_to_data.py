@@ -40,7 +40,7 @@ def preprocess_data(data_path: str, qrels_path: str, save_path: str):
         data['refs'] = refs
     
     with open(save_path, 'w') as f:
-        f.dump(raw_data, f)
+        json.dump(raw_data, f)
 
 
 if __name__ == "__main__":
