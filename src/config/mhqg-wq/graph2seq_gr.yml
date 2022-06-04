@@ -11,8 +11,14 @@ wmd_emb_file: null
 saved_vocab_file: '../data/mhqg-wq/vocab_model_min3'
 pretrained: '../out/mhqg-wq/graph2seq_ae'
 
+# Retrieval qrels
 depth: 20
-save_ranking_to: '../data/wq/rank.tsv'
+
+save_train_to: '../data/wq/train_rank.tsv'
+save_dev_to: '../data/wq/dev_rank.tsv'
+save_test_to: '../data/wq/test_rank.tsv'
+
+
 
 # Output
 out_dir: null

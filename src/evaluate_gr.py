@@ -24,6 +24,13 @@ logging.basicConfig(
 
 
 def search_queries(retriever, q_reps, p_lookup, batch_size=-1, depth=100):
+    """
+    Args:
+        q_reps:
+    Returns:
+        all_score (np.ndarray): (num_samples, depth)
+        psg_indices List[Lit[int]]: (num_sample, depth)
+    """
     if batch_size > 0:
         all_scores, all_indices = retriever.batch_search(q_reps, depth, batch_size)
     else:
@@ -53,16 +60,34 @@ def main(config):
     model = ModelHandler(config)
     q_reps, q_lookup = model.encode(model.test_loader)
     p_reps, p_lookup = model.encode(model.train_loader)
+    d_reps, d_lookup = model.encode(model.dev_loader)
 
     retriever = BaseFaissIPRetriever(p_reps)
     retriever.add(p_reps)
 
     depth = config['depth']
 
-    logger.info('Index Search Start')
-    all_scores, psg_indices = search_queries(retriever, q_reps, p_lookup, batch_size=-1, depth=depth)
-    logger.info('Index Search Finished')
 
+    logger.info('Index Search Start for Train')
+    all_scores, psg_indices = search_queries(retriever, p_reps, p_lookup, batch_size=-1, depth=depth+1)
+    # eliminate self for train set
+    all_scores = all_scores[:, 1:]
+    psg_indices = [ids[1:] for ids in psg_indices] 
+    write_ranking(psg_indices, all_scores, p_lookup, config['save_train_to'])
+    logger.info('Index Search Finished for Train')
+
+    logger.info('Index Search Start for Dev')
+    all_scores, psg_indices = search_queries(retriever, d_reps, p_lookup, batch_size=-1, depth=depth)
+    write_ranking(psg_indices, all_scores, d_lookup, config['save_dev_to'])
+    logger.info('Index Search Finished for Dev')
+
+    logger.info('Index Search Start for Test')
+    all_scores, psg_indices = search_queries(retriever, q_reps, p_lookup, batch_size=-1, depth=depth)
+    write_ranking(psg_indices, all_scores, q_lookup, config['save_test_to'])
+    logger.info('Index Search Finished for test')
+
+
+    # evaluation on test set
     test_data = model.test_loader.data # List[Tuple[int, List[int], List[int]]]
 
     test_labels = {} # Dict[int, List[int]], qid -> pos_ids
@@ -94,7 +119,6 @@ def main(config):
     logger.info(f"F1@{depth}: {f1}")
     logger.info(f"Accuracy@{depth}: {accuracy}")
 
-    write_ranking(psg_indices, all_scores, q_lookup, config['save_ranking_to'])
 
 
 def grid_search_main(config):

@@ -1,3 +1,5 @@
 .DS_Store
 *.pyc
 BAMnet/
+out/
+data/glove.840B.300d.txt
