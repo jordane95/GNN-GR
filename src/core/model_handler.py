@@ -285,9 +285,9 @@ class ModelHandler(object):
                 query_reps.append(res['query_reps'].cpu()) # List[Tensor]
                 query_ids.extend(res['query_ids']) # List[int]
                 # gold.extend(x_batch['target_src'])
-        
-        query_reps = torch.cat(query_reps).numpy()
-        query_ids = np.array(query_ids)
+        if mode == 'test' and out_predictions:
+            query_reps = torch.cat(query_reps).numpy()
+            query_ids = np.array(query_ids)
 
         return query_reps, query_ids
 
