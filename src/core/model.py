@@ -260,7 +260,7 @@ def train_batch(batch, network, vocab, criterion, forcing_ratio, rl_ratio, confi
 
     graph_output = {}
 
-    for key in ['query', 'pos', 'neg']:
+    for key in ['query', 'pos']:
       graph_batch = batch[key]
       with torch.set_grad_enabled(True):
           ext_vocab_size = graph_batch['oov_dict'].ext_vocab_size if graph_batch['oov_dict'] else None
@@ -275,9 +275,9 @@ def train_batch(batch, network, vocab, criterion, forcing_ratio, rl_ratio, confi
     
     query_reps = pooler(graph_output['query'].encoder_state) # (batch_size, graph_emb_dim)
     pos_reps = pooler(graph_output['pos'].encoder_state)
-    neg_reps = pooler(graph_output['neg'].encoder_state)
+    # neg_reps = pooler(graph_output['neg'].encoder_state)
     
-    doc_reps = torch.cat((pos_reps, neg_reps)) # (batch_size*2, graph_emb_dim)
+    doc_reps = pos_reps
 
     scores = torch.matmul(query_reps, doc_reps.transpose(0, 1)) # (batch_size, batch_size * 2)
     scores = scores.view(batch_size, -1)
@@ -303,7 +303,7 @@ def dev_batch(batch, network, vocab, criterion=None, show_cover_loss=False):
 
   graph_output = {}
 
-  for key in ['query', 'pos', 'neg']:
+  for key in ['query', 'pos']:
     graph_batch = batch[key]
     with torch.no_grad():
         ext_vocab_size = graph_batch['oov_dict'].ext_vocab_size if graph_batch['oov_dict'] else None
@@ -315,11 +315,10 @@ def dev_batch(batch, network, vocab, criterion=None, show_cover_loss=False):
   
   query_reps = pooler(graph_output['query'].encoder_state) # (batch_size, graph_emb_dim)
   pos_reps = pooler(graph_output['pos'].encoder_state)
-  neg_reps = pooler(graph_output['neg'].encoder_state)
-  
-  doc_reps = torch.cat((pos_reps, neg_reps)) # (batch_size*2, graph_emb_dim)
 
-  scores = torch.matmul(query_reps, doc_reps.transpose(0, 1)) # (batch_size, batch_size * 2)
+  doc_reps = pos_reps # (batch_size, graph_emb_dim)
+
+  scores = torch.matmul(query_reps, doc_reps.transpose(0, 1)) # (batch_size, batch_size)
   scores = scores.view(batch_size, -1)
 
   target = torch.arange(scores.size(0), device=scores.device, dtype=torch.long)

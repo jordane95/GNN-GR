@@ -29,15 +29,15 @@ tokenize = lambda s: wordpunct_tokenize(s)
 
 
 def vectorize_triple_input(triple_batch, config, bert_model, training=True, device=None):
-    query_batch, pos_batch, neg_batch = triple_batch['query'], triple_batch['pos'], triple_batch['neg']
+    query_batch, pos_batch = triple_batch['query'], triple_batch['pos']
     query_ids = triple_batch['qids']
     query_batch_input = vectorize_input(query_batch, config, bert_model, training, device)
     pos_batch_input = vectorize_input(pos_batch, config, bert_model, training, device)
-    neg_batch_input = vectorize_input(neg_batch, config, bert_model, training, device)
+    # neg_batch_input = vectorize_input(neg_batch, config, bert_model, training, device)
     vectorized_triple = {
         "query": query_batch_input,
         "pos": pos_batch_input,
-        "neg": neg_batch_input,
+        # "neg": neg_batch_input,
         "batch_size": query_batch_input['batch_size'],
         "qids": query_ids,
     }
@@ -126,11 +126,10 @@ def load_data(inpath, triple_path, isLower=True, levi_graph=True):
 
     with open(triple_path, 'r') as f:
         for line in f:
-            qid, pos_ids, neg_ids = line.strip().split('\t')
+            qid, pos_ids = line.strip().split('\t')
             qid = int(qid)
             pos_ids = list(map(int, pos_ids.split(',')))
-            neg_ids = list(map(int, neg_ids.split(',')))
-            instance = (qid, pos_ids, neg_ids)
+            instance = (qid, pos_ids)
             all_instances.append(instance)
 
     all_graphs: Dict[int, object] = {}
@@ -244,21 +243,21 @@ class DataStream(object):
 
             query_ids = [instance[0] for instance in cur_instances] # List[int]
             pos_ids = [instance[1][0] for instance in cur_instances] # always use the first as positive
-            neg_ids = [instance[2][0] for instance in cur_instances] # TODO: random sample a negative
+            # neg_ids = [instance[2][0] for instance in cur_instances] # TODO: random sample a negative
 
             query_graph_batch = [query_graphs[qid] for qid in query_ids] # List[Sequence]
             pos_graph_batch = [graph_corpus[pid] for pid in pos_ids]
-            neg_graph_batch = [graph_corpus[nid] for nid in neg_ids]
+            # neg_graph_batch = [graph_corpus[nid] for nid in neg_ids]
 
             query_batch = InstanceBatch(query_graph_batch, config, word_vocab, node_vocab, node_type_vocab, edge_type_vocab, ext_vocab=ext_vocab)
             pos_batch = InstanceBatch(pos_graph_batch, config, word_vocab, node_vocab, node_type_vocab, edge_type_vocab, ext_vocab=ext_vocab)
-            neg_batch = InstanceBatch(neg_graph_batch, config, word_vocab, node_vocab, node_type_vocab, edge_type_vocab, ext_vocab=ext_vocab)
+            # neg_batch = InstanceBatch(neg_graph_batch, config, word_vocab, node_vocab, node_type_vocab, edge_type_vocab, ext_vocab=ext_vocab)
 
             # cur_batch = (query_batch, pos_batch, neg_batch)
             cur_batch = {
                 "query": query_batch,
                 "pos": pos_batch,
-                "neg": neg_batch,
+                # "neg": neg_batch,
                 "qids": query_ids,
             }
 

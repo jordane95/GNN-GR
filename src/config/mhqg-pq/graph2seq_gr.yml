@@ -3,9 +3,9 @@ dataset_name: 'mhqg-pq'
 trainset: '../data/mhqg-pq/train.json'
 devset: '../data/mhqg-pq/dev.json'
 testset: '../data/mhqg-pq/test.json'
-train: '../data/pq/train.tsv'
-dev: '../data/pq/dev.tsv'
-test: '../data/pq/test.tsv'
+train: '../data/pq/sbert_train.tsv'
+dev: '../data/pq/sbert_dev.tsv'
+test: '../data/pq/sbert_test.tsv'
 pretrained_word_embed_file: '../data/glove.840B.300d.txt'
 wmd_emb_file: null
 saved_vocab_file: '../data/mhqg-pq/vocab_model_min3'
@@ -111,7 +111,7 @@ eary_stop_metric: 'Bleu_4'
 random_seed: 1234
 shuffle: True # Whether to shuffle the examples during training
 max_epochs: 100
-batch_size: 30 # 30!
+batch_size: 256 # 30!
 patience: 10
 verbose: 1000 # Print every X batches
 
