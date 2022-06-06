@@ -1,3 +1,5 @@
+from typing import List
+
 depth = 20
 
 test_labels = {} # Dict[int, List[int]], qid -> pos_ids
