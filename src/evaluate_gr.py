@@ -101,7 +101,7 @@ def main(config):
 
     test_labels = {} # Dict[int, List[int]], qid -> pos_ids
     
-    for qid, pos_ids, neg_ids in test_data:
+    for qid, pos_ids in test_data:
         test_labels[qid] = pos_ids
     
     precisions = []
