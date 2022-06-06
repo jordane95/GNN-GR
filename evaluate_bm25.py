@@ -4,16 +4,20 @@ depth = 20
 
 test_labels = {} # Dict[int, List[int]], qid -> pos_ids
 
-with open("data/wq/sbert_test.tsv") as f:
+with open("data/pq/sbert_test.tsv") as f:
     for line in f:
+        if len(line.strip().split('\t')) != 2:
+            continue
         qid, pos_ids = line.strip().split('\t')
         qid = int(qid)
         pos_ids = list(map(int, pos_ids.split(',')))
         test_labels[qid] = pos_ids
 
 pred_labels = {}
-with open("data/wq/reina_test.tsv", 'r') as f:
+with open("data/pq/reina_test.tsv", 'r') as f:
     for line in f:
+        if len(line.strip().split('\t')) != 2:
+            continue
         qid, pos_ids = line.strip().split('\t')
         qid = int(qid)
         pos_ids = list(map(int, pos_ids.split(',')))
