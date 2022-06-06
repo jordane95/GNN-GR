@@ -21,7 +21,7 @@ precisions = []
 recalls = []
 f1s = []
 hits = 0
-for qid, pred_pids in pred_labels.item():
+for qid, pred_pids in pred_labels.items():
     pred_pids: List[int]
     qid: int
     true_pids: List[int] = test_labels[qid]
