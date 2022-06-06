@@ -36,7 +36,7 @@ for qid, pred_pids in pred_labels.items():
 precision = sum(precisions) / len(precisions)
 recall = sum(recalls) / len(recalls)
 f1 = sum(f1s) / len(f1s)
-accuracy = hits / len(q_lookup)
+accuracy = hits / len(test_labels)
 
 print(f"Precision@{depth}: {precision}")
 print(f"Recall@{depth}: {recall}")
