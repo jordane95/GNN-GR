@@ -12,7 +12,11 @@ saved_vocab_file: '../data/mhqg-wq/vocab_model_min3'
 pretrained: '../out/mhqg-wq/graph2seq_ae'
 
 # Retrieval qrels
-depth: 20
+depth: 5
+
+bm25_train: '../data/wq/reina_train.tsv'
+bm25_dev: '../data/wq/reina_dev.tsv'
+bm25_test: '../data/wq/reina_test.tsv'
 
 save_train_to: '../data/wq/train_rank.tsv'
 save_dev_to: '../data/wq/dev_rank.tsv'

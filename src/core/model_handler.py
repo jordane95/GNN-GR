@@ -193,6 +193,11 @@ class ModelHandler(object):
 
 
     def encode(self, data_loader):
+        """
+        Returns:
+            query_reps (numpy.ndarray[float]): (num_samples, emb_dim)
+            query_ids (numpy.ndarray[int]): (num_samples)
+        """
 
         # Restore best model
         print('Restoring best model')

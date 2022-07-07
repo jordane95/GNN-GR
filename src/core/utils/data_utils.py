@@ -244,7 +244,7 @@ class DataStream(object):
 
             query_ids = [instance[0] for instance in cur_instances] # List[int]
             pos_ids = [instance[1][0] for instance in cur_instances] # always use the first as positive
-            neg_ids = [instance[2][0] for instance in cur_instances] # TODO: random sample a negative
+            neg_ids = [np.random.choice(instance[2]) for instance in cur_instances] # TODO: random sample a negative
 
             query_graph_batch = [query_graphs[qid] for qid in query_ids] # List[Sequence]
             pos_graph_batch = [graph_corpus[pid] for pid in pos_ids]

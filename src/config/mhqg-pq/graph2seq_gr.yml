@@ -14,6 +14,10 @@ pretrained: '../out/mhqg-pq/graph2seq_ae'
 # Retrieval qrels
 depth: 20
 
+bm25_train: '../data/pq/reina_train.tsv'
+bm25_dev: '../data/pq/reina_dev.tsv'
+bm25_test: '../data/pq/reina_test.tsv'
+
 save_train_to: '../data/pq/train_rank.tsv'
 save_dev_to: '../data/pq/dev_rank.tsv'
 save_test_to: '../data/pq/test_rank.tsv'
